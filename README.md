@@ -25,6 +25,12 @@ Build docker image for ansible
 docker build . -t ansible
 ```
 
+Copy and update environment variables:
+```bash
+cp .env.docker.example .env.docker
+cp .env.example .env
+```
+
 ## Usage
 Please check Makefile for command meaninig.
 
