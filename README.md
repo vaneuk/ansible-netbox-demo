@@ -51,7 +51,7 @@ Show pending commands:
 make check_diff
 ```
 
-Show pending commands:
+Apply commands:
 ```bash
 make apply_config
 ```
