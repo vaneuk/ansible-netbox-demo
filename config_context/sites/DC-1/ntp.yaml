@@ -1,0 +1,6 @@
+ntp:
+  servers:
+    - ip: "1.1.1.1"
+      vrf: "management"
+    - ip: "2.2.2.2"
+      vrf: "management"

@@ -1,0 +1,23 @@
+---
+- name: "PLAY 1: APPLY CONFIGURATION"
+  hosts: platforms_nxos, platforms_ios, platforms_eos
+  connection: ansible.netcommon.network_cli
+  gather_facts: no
+  vars:
+    ansible_password: "{{ lookup('ansible.builtin.env', 'SSH_PASSWORD') }}"
+  tasks:
+
+#  - name: "TASK 1: APPLY INTENDED CONFIGURATION"
+#    cisco.nxos.nxos_config:
+#      replace_src: "{{ lookup('file', 'intended_configurations/' + inventory_hostname + '.txt') }}"
+#      replace: config
+#    register: CMD_OUTPUT
+
+  - name: "TASK 1: APPLY INTENDED CONFIGURATION"
+    cisco.nxos.command:
+      commands: configure replace bootflash:test_file.txt
+    register: CMD_OUTPUT
+
+  - name: DEBUG
+    ansible.builtin.debug:
+      msg: "{{ CMD_OUTPUT.stdout_lines }}"

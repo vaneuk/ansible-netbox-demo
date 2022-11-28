@@ -1,0 +1,24 @@
+---
+- name: "PLAY 1: CHECK DIFF"
+  hosts: platforms_nxos, platforms_ios, platforms_eos
+  connection: ansible.netcommon.network_cli
+  gather_facts: no
+  vars:
+    ansible_password: "{{ lookup('ansible.builtin.env', 'SSH_PASSWORD') }}"
+  tasks:
+
+  # File copy from ansible controller to nxos device
+  - name: copy from server to device
+    cisco.nxos.nxos_file_copy:
+      local_file: "{{ 'intended_configurations/' + inventory_hostname + '.txt' }}"
+      remote_file: test_file.txt
+      file_system: ""
+
+  - name: SHOW DIFF
+    cisco.nxos.command:
+      commands: configure replace bootflash:test_file.txt show-patch
+    register: CMD_OUTPUT
+
+  - name: DEBUG
+    ansible.builtin.debug:
+      msg: "{{ CMD_OUTPUT.stdout_lines }}"

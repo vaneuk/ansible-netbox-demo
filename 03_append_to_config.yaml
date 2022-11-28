@@ -1,0 +1,27 @@
+---
+- name: "PLAY 1: APPEND MINIMAL REQUIRED CONFIGURATIONS"
+  hosts: platforms_nxos, platforms_ios, platforms_eos
+  connection: ansible.netcommon.network_cli
+  gather_facts: no
+  vars:
+    ansible_password: "{{ lookup('ansible.builtin.env', 'SSH_PASSWORD') }}"
+  tasks:
+
+  - name: Copy mandatory parts of config
+    cisco.nxos.command:
+      commands: show running-config | egrep "^version|^username admin|^snmp-server user admin|^boot"
+    register: CMD_OUTPUT
+
+  - name: Add mandatory config to generated config
+    ansible.builtin.blockinfile:
+      path: "{{ 'intended_configurations/' + inventory_hostname + '.txt' }}"
+      block: "{{ CMD_OUTPUT.stdout[0] }}"
+      marker: "!"
+
+#  # File copy from ansible controller to nxos device
+#  - name: copy from server to device
+#    cisco.nxos.nxos_file_copy:
+#      local_file: ./test_file.txt
+#      remote_file: test_file.txt
+
+

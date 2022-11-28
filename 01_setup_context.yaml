@@ -1,0 +1,25 @@
+---
+- name: "PLAY 1: SETUP CONTEXT DATA"
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+    install_state: present
+    netbox_url: "{{ lookup('ansible.builtin.env', 'NETBOX_API') }}"
+    netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_KEY') }}"
+  tasks:
+
+    - name: "TASK 1: SETUP CONTEXT DATA"
+      netbox.netbox.netbox_config_context:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ item.0 }}_{{ item.1 }}"
+          description: "some description"
+          data: "{{ (lookup('file', 'config_context/sites/' + item.0 + '/' + item.1 + '.yaml') | from_yaml) }}"
+          sites: "{{ item.0 }}"
+        state: "{{ install_state }}"
+      loop: "{{ sites | product(var_files) | list }}"
+      vars:
+        sites: ["DC-1", "OFFICE-1"]
+        var_files: ["ntp", "logging"]

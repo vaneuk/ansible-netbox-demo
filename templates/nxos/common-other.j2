@@ -1,0 +1,22 @@
+hostname site-1-leaf-1
+
+vlan 1
+
+interface vlan1
+
+vdc site-1-leaf-1 id 1
+  limit-resource vlan minimum 16 maximum 4094
+  limit-resource vrf minimum 2 maximum 4096
+  limit-resource port-channel minimum 0 maximum 511
+  limit-resource u4route-mem minimum 248 maximum 248
+  limit-resource u6route-mem minimum 96 maximum 96
+  limit-resource m4route-mem minimum 58 maximum 58
+  limit-resource m6route-mem minimum 8 maximum 8
+
+no password strength-check
+
+copp profile strict
+ip domain-lookup
+
+vrf context management
+  ip route 0.0.0.0/0 10.0.24.1

@@ -1,0 +1,8 @@
+{%- for server in logging.servers %}
+{% if server.port == 514 %}
+logging server {{ server["ip"] }} {{ server["level"] }} use-vrf {{ server["vrf"] }}
+{% else %}
+logging server {{ server["ip"] }} {{ server["level"] }} port {{ server["port"] }} use-vrf {{ server["vrf"] }}
+{% endif %}
+{% endfor %}
+logging timestamp milliseconds

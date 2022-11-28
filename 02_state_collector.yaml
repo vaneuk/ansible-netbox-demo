@@ -1,0 +1,61 @@
+---
+- name: "PLAY 1: COLLECT STATE AND PUSH TO NETBOX"
+  hosts: platforms_nxos, platforms_ios, platforms_eos
+  connection: ansible.netcommon.network_cli
+  gather_facts: no
+  vars:
+    ansible_password: "{{ lookup('ansible.builtin.env', 'SSH_PASSWORD') }}"
+    netbox_url: "{{ lookup('ansible.builtin.env', 'NETBOX_API') }}"
+    netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_KEY') }}"
+  tasks:
+
+    - name: "TASK 1: GET COMMAND OUTPUT"
+      cisco.nxos.nxos_command:
+        commands:
+          - show version
+          - show inventory
+          - show interface
+      register: CMD_OUTPUTS
+
+     # CHANGE TO LOOP
+    - name: "TASK 2.01: RUN THROUGH THE PARSER SHOW INVENTORY"
+      ansible.utils.cli_parse:
+        text: "{{ CMD_OUTPUTS.stdout[1] }}"
+        parser:
+          name: ansible.utils.textfsm
+          template_path: "ntc-templates/ntc_templates/templates/cisco_nxos_show_inventory.textfsm"
+        set_fact: inventory
+
+    - name: "TASK 2.02: RUN THROUGH THE PARSER SHOW INTERFACE"
+      ansible.utils.cli_parse:
+        text: "{{ CMD_OUTPUTS.stdout[2] }}"
+        parser:
+          name: ansible.utils.textfsm
+          template_path: "ntc-templates/ntc_templates/templates/cisco_nxos_show_interface.textfsm"
+        set_fact: interfaces
+
+#    - name: "TASK 3: SHOW ANSIBLE FACTS OUTPUT"
+#      debug:
+#        msg: "{{ ansible_facts }}"
+
+    - name: "TASK 3.01: NETBOX >> ADD SERIAL NUMBER"
+      netbox.netbox.netbox_device:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ inventory_hostname }}"
+          serial: "{{ serial_numer }}"
+        state: present
+
+    - name: "TASK 3.02: NETBOX >> ADD DEVICE INTERFACE MAC"
+      netbox.netbox.netbox_device_interface:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          device: "{{ inventory_hostname }}"
+          name: "{{ item.INTERFACE }}"
+          mac_address: "{{ item.ADDRESS }}"
+        state: present
+      loop: "{{ ansible_facts['interfaces'] }}"
+      loop_control:
+        label: "{{ item.INTERFACE }}"

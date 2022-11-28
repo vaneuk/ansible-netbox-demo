@@ -1,0 +1,4 @@
+{%- for ntp_server in ntp["servers"] %}
+ntp server {{ ntp_server["ip"] }} use-vrf {{ ntp_server["vrf"] }}
+{% endfor %}
+ntp logging

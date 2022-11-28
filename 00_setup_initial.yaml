@@ -1,0 +1,181 @@
+---
+- name: "PLAY 1: SETUP NETBOX INITIAL"
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+    install_state: present
+    netbox_url: "{{ lookup('ansible.builtin.env', 'NETBOX_API') }}"
+    netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_KEY') }}"
+  tasks:
+    - name: "TASK 0.5: SETUP SITE GROUPS"
+      netbox.netbox.netbox_site_group:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data: "{{ site_group }}"
+        state: "{{ install_state }}"
+      loop: "{{ site_groups }}"
+      loop_control:
+        loop_var: site_group
+        label: "{{ site_group['name'] }}"
+      tags: [ sites ]
+
+    - name: "TASK 1: SETUP SITES"
+      netbox.netbox.netbox_site:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data: "{{ site }}"
+        state: "{{ install_state }}"
+      register: site_setup
+      loop: "{{ sites }}"
+      loop_control:
+        loop_var: site
+        label: "{{ site['name'] }}"
+      tags: [ sites ]
+
+    - name: "TASK 2: SETUP RACKS"
+      netbox.netbox.netbox_rack:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data: "{{ rack }}"
+        state: "{{ install_state }}"
+      loop: "{{ racks }}"
+      loop_control:
+        loop_var: rack
+        label: "{{ rack['name'] }}"
+      tags: [ sites ]
+
+    - name: "TASK 3: SETUP MANUFACTURERS"
+      netbox.netbox.netbox_manufacturer:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ manufacturer }}"
+        state: "{{ install_state }}"
+      loop: "{{ manufacturers }}"
+      loop_control:
+        loop_var: manufacturer
+      tags: [ devices ]
+
+    - name: "TASK 4: SETUP DEVICE TYPES"
+      netbox.netbox.netbox_device_type:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          model: "{{ device_type.model }}"
+          manufacturer: "{{ device_type.manufacturer }}"
+          slug: "{{ device_type.slug }}"
+          part_number: "{{ device_type.part_number }}"
+          u_height: "{{ device_type.u_height }}"
+          is_full_depth: "{{ device_type.is_full_depth }}"
+        state: "{{ install_state }}"
+      loop: "{{ device_types }}"
+      loop_control:
+        loop_var: device_type
+        label: "{{ device_type['model'] }}"
+      tags: [ devices, types ]
+
+    - name: "TASK 4.5: SETUP DEVICE TYPE INTERFACES"
+      netbox.netbox.netbox_device_interface_template:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          device_type: "{{ item.0.slug }}"
+          name: "{{ item.1.name }}"
+          type: "{{ item.1.type }}"
+        state: "{{ install_state }}"
+      with_subelements:
+        - "{{ device_types }}"
+        - interfaces
+      tags: [ intf ]
+
+    - name: "TASK 5: SETUP PLATFORMS"
+      netbox.netbox.netbox_platform:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ platform.name }}"
+          slug: "{{ platform.slug }}"
+        state: "{{ install_state }}"
+      loop: "{{ platforms }}"
+      loop_control:
+        loop_var: platform
+        label: "{{ platform['name'] }}"
+      tags: [ devices ]
+
+    - name: "TASK 6: SETUP DEVICE ROLES"
+      netbox.netbox.netbox_device_role:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ device_role.name }}"
+          color: "{{ device_role.color }}"
+          vm_role: "{{ device_role.vmrole }}"
+        state: "{{ install_state }}"
+      loop: "{{ device_roles }}"
+      loop_control:
+        loop_var: device_role
+        label: "{{ device_role['name'] }}"
+      tags: [ devices ]
+
+    - name: "TASK 7: SETUP VLANS"
+      netbox.netbox.netbox_vlan:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "VLAN{{ vlan.vid }}"
+          vid: "{{ vlan.vid }}"
+          site: "{{ vlan.site }}"
+          description: "{{ vlan.desc }}"
+        state: "{{ install_state }}"
+      register: result
+      loop: "{{ vlans }}"
+      loop_control:
+        loop_var: vlan
+        label: "{{ vlan['vid'] }}"
+      tags: [ ipam ]
+
+    - name: "TASK 8: SETUP RFC1918 RIR"
+      netbox.netbox.netbox_rir:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data: "{{ rir }}"
+        state: "{{ install_state }}"
+      loop: "{{ rirs }}"
+      loop_control:
+        loop_var: rir
+        label: "{{ rir['name'] }}"
+      tags: [ ipam ]
+
+    - name: "TASK 8: SETUP AGGREGRATES"
+      netbox.netbox.netbox_aggregate:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          prefix: "{{ aggregate.name }}"
+          description: "{{ aggregate.desc }}"
+          rir: "{{ aggregate.rir }}"
+        state: "{{ install_state }}"
+      loop: "{{ aggregates }}"
+      loop_control:
+        loop_var: aggregate
+        label: "{{ aggregate['name'] }}"
+      tags: [ ipam ]
+
+    - name: "TASK 9: SETUP PREFIXES"
+      netbox.netbox.netbox_prefix:
+        netbox_url: "{{ netbox_url }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          family: 4
+          prefix: "{{ prefix.prefix }}"
+          site: "{{ prefix.site | default(omit) }}"
+          status: "{{ prefix.status | default('Active') }}"
+          description: "{{ prefix.desc }}"
+          is_pool: "{{ prefix.ispool }}"
+        state: "{{ install_state }}"
+      loop: "{{ prefixes }}"
+      loop_control:
+        loop_var: prefix
+        label: "{{ prefix['prefix'] }}"
+      tags: [ ipam ]

@@ -1,0 +1,4 @@
+all:
+  hosts:
+    n9k:
+      ansible_host: 10.0.24.200

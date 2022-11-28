@@ -1,0 +1,10 @@
+logging:
+  servers:
+    - ip: "3.1.1.1"
+      vrf: "management"
+      level: 6
+      port: 514
+    - ip: "4.2.2.2"
+      vrf: "management"
+      level: 6
+      port: 515

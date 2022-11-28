@@ -1,0 +1,23 @@
+{% for interface in interfaces %}
+interface {{ interface.name }}
+{% if interface.description %}
+  description {{ interface.description }}
+{% endif %}
+{% if interface.mode == "tagged" %}
+  switchport mode trunk
+  switchport trunk allowed vlan {{ interface.tagged_vlans | vlan }}
+{% elif interface.mode == "access" %}
+  switchport access vlan {{ interface.untagged_vlan }}
+{% elif interface["count_ipaddresses"] > 0 %}
+  {% if interface.name != "mgmt0" %}
+  no switchport
+  {% endif %}
+  {% if interface.vrf %}
+  vrf member {{ interface.vrf }}
+  {% endif %}
+  {% for ip_address in interface["ip_addresses"] %}
+  ip address {{ ip_address.address }}
+  {% endfor %}
+{% endif %}
+
+{% endfor %}
