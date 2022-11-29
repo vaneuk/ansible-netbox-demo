@@ -4,13 +4,7 @@
 Follow instruction to run netbox via docker https://github.com/netbox-community/netbox-docker#quickstart
 
 
-```bash
-pip install -r requirements.txt
-ansible-galaxy collection install netbox.netbox
-ansible-galaxy collection install cisco.nxos
-ansible-galaxy collection install cisco.ios
-```
-
+Install requirements
 ```bash
 pip install -r requirements.txt
 ```
@@ -20,7 +14,7 @@ Copy ntc templates:
 git clone git@github.com:networktocode/ntc-templates.git
 ```
 
-Build docker image for ansible
+We are going to use ansile docker image. Let's build it:
 ```bash
 docker build . -t ansible
 ```
